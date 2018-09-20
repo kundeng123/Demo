@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
 
+import org.h2.tools.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +19,7 @@ public class DBConnection {
 
 	   // JDBC driver name and database URL 
 	   static final String JDBC_DRIVER = "org.h2.Driver";   
-	   static final String DB_URL = "jdbc:h2:~/test";  
+	   static final String DB_URL = "jdbc:h2:tcp://localhost/~/test";  
 	   
 	   //  Database credentials 
 	   static final String USER = "sa"; 
@@ -30,55 +31,56 @@ public class DBConnection {
 	      try { 
 	         // STEP 1: Register JDBC driver 
 	         Class.forName(JDBC_DRIVER); 
-	             
+	         Server server = Server.createTcpServer("-tcpAllowOthers").start();
+//	         server.start();
 	         Properties prop = new Properties();
-	         try {
-	             //load a properties file from class path, inside static method
-	             prop.load(DBConnection.class.getClassLoader().getResourceAsStream("application.properties"));
-
-	             //get the property value and print it out
-	             System.out.println(prop.getProperty("spring.h2.console.enabled"));
-	             System.out.println(prop.getProperty("spring.datasource.url"));
-//	             System.out.println(prop.getProperty("dbpassword"));
-
-	         } 
-	         catch (IOException ex) {
-	             ex.printStackTrace();
-	         }
+//	         try {
+//	             //load a properties file from class path, inside static method
+//	             prop.load(DBConnection.class.getClassLoader().getResourceAsStream("application.properties"));
+//
+//	             //get the property value and print it out
+//	             System.out.println(prop.getProperty("spring.h2.console.enabled"));
+//	             System.out.println(prop.getProperty("spring.datasource.url"));
+////	             System.out.println(prop.getProperty("dbpassword"));
+//
+//	         } 
+//	         catch (IOException ex) {
+//	             ex.printStackTrace();
+//	         }
 	         //STEP 2: Open a connection 
 	         System.out.println("Connecting to database..."); 
 	         conn = DriverManager.getConnection(DB_URL,USER,PASS);  
 	         
 	         //STEP 3: Execute a query 
 //	         System.out.println("Creating table in given database..."); 
-//	         stmt = conn.createStatement(); 
-//	         String sql =  "CREATE TABLE   REGISTRATION " + 
-//	            "(id INTEGER not NULL, " + 
-//	            " first VARCHAR(255), " +  
-//	            " last VARCHAR(255), " +  
-//	            " age INTEGER, " +  
-//	            " PRIMARY KEY ( id ))";  
-//	         stmt.executeUpdate(sql);
-//	         System.out.println("Created table in given database..."); 
+	         stmt = conn.createStatement(); 
+	         String sql =  "CREATE TABLE if not exists  REGISTRATION " + 
+	            "(id INTEGER not NULL, " + 
+	            " first VARCHAR(255), " +  
+	            " last VARCHAR(255), " +  
+	            " age INTEGER, " +  
+	            " PRIMARY KEY ( id ))";  
+	         stmt.executeUpdate(sql);
+	         System.out.println("Created table in given database..."); 
 	         
 	         
 	      // STEP 3: Execute a query 
 	         stmt = conn.createStatement();  
-//	         String sql = "INSERT INTO Registration " + "VALUES (100, 'Zara', 'Ali', 18)"; 
-//	         
-//	         stmt.executeUpdate(sql); 
-//	         sql = "INSERT INTO Registration " + "VALUES (101, 'Mahnaz', 'Fatma', 25)";  
-//	         
-//	         stmt.executeUpdate(sql); 
-//	         sql = "INSERT INTO Registration " + "VALUES (102, 'Zaid', 'Khan', 30)"; 
-//	         
-//	         stmt.executeUpdate(sql); 
-//	         sql = "INSERT INTO Registration " + "VALUES(103, 'Sumit', 'Mittal', 28)"; 
-//	         
-//	         stmt.executeUpdate(sql); 
-//	         System.out.println("Inserted records into the table..."); 
+	         sql = "INSERT INTO Registration " + "VALUES (100, 'Zara', 'Ali', 18)"; 
 	         
-	         String sql = "SELECT id, first, last, age FROM Registration"; 
+	         stmt.executeUpdate(sql); 
+	         sql = "INSERT INTO Registration " + "VALUES (101, 'Mahnaz', 'Fatma', 25)";  
+	         
+	         stmt.executeUpdate(sql); 
+	         sql = "INSERT INTO Registration " + "VALUES (102, 'Zaid', 'Khan', 30)"; 
+	         
+	         stmt.executeUpdate(sql); 
+	         sql = "INSERT INTO Registration " + "VALUES(103, 'Sumit', 'Mittal', 28)"; 
+	         
+	         stmt.executeUpdate(sql); 
+	         System.out.println("Inserted records into the table..."); 
+	         
+	         sql = "SELECT id, first, last, age FROM Registration"; 
 	         ResultSet rs = stmt.executeQuery(sql); 
 	         LOGGER.info("Start waiting...");
 	         Thread.sleep(1000 * 60 * 2);
@@ -99,6 +101,7 @@ public class DBConnection {
 	         // STEP 4: Clean-up environment 
 	         stmt.close(); 
 	         conn.close(); 
+	         server.stop();
 	      } catch(SQLException se) { 
 	         //Handle errors for JDBC 
 	         se.printStackTrace(); 

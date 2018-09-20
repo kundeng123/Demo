@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.commons.math3.distribution.NormalDistribution;
 
-public class StockSimulator extends TimerTask{
+public class StockSimulator {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(StockSimulator.class);
 

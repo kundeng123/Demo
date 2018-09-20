@@ -9,7 +9,7 @@ import demo.test.TodoEventProducer;
 
 
 public class Application {
-	private static final Logger LOGGER = LoggerFactory.getLogger(testT.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(Application.class);
 
     @Autowired
 	public static TodoEventProducer todoEventProducer;
