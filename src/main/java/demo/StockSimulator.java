@@ -51,55 +51,54 @@ public class StockSimulator {
 		
 		double s = 100;
 		
+		
 		Runnable helloRunnable = new Runnable() {
 		    public void run() {
 		        System.out.println("Updating price");
-				LOGGER.info("random seconds {}", random.nextDouble() * (1.5) + 0.5);
+		        double deltaT = random.nextDouble() * (1.5) + 0.5;
+		        
+				LOGGER.info("random seconds {}", deltaT);
 
-//		        s = simulator.updateStockPrice(s, Math.ran, STOCK_A_MU, STOCK_A_STD)
+//		        double s = simulator.updateStockPrice(s, deltaT, STOCK_A_MU, STOCK_A_STD);
+		        
 		    }
 		};
 
-		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-		try {
-			Thread.sleep((long)(random.nextDouble() * (1.5) + 0.5) * 1000);
-			executor.execute(helloRunnable);
-
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		long start = System.currentTimeMillis();
+		long end = start + 20*1000; // 60 seconds * 1000 ms/sec
+		
+		
+		while (System.currentTimeMillis() < end)
+		{
+		    // run
+			long deltaT = random.nextInt(1501) + 500;
+			LOGGER.debug("deltaT {}", deltaT);
+			try {
+				Thread.sleep(deltaT);
+				s = simulator.updateStockPrice(s, deltaT, STOCK_A_MU, STOCK_A_STD);
+				LOGGER.debug("random millisecond {}", deltaT );
+				LOGGER.debug("updatied prcie {}", s);
+				
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+//			ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+//			try {
+//				Thread.sleep((long)(random.nextDouble() * (1.5) + 0.5) * 1000);
+//				executor.execute(helloRunnable);
+//
+//			} catch (InterruptedException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
 		}
 		
 		
-		class Helper extends TimerTask 
-		{ 
-		    public void run() 
-		    { 
-		        System.out.println("Timer ran"); 
-		        
-		    } 
-		      
-		} 
+		System.exit(0);
 		
-		TimerTask timerTask = new Helper();
-        //running timer task as daemon thread
-        Timer timer = new Timer(true);
-        timer.scheduleAtFixedRate(timerTask, 0, 10*1000);
-        System.out.println("TimerTask started");
-        //cancel after sometime
-        try {
-            Thread.sleep(120000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        timer.cancel();
-        System.out.println("TimerTask cancelled");
-        try {
-            Thread.sleep(30000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        
+
         
 //		simulator.updateStockPrice(s, deltaT, STOCK_A_MU, STOCK_A_STD);
 		
