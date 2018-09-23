@@ -31,6 +31,8 @@ public class SocketServerExample {
             ObjectInputStream ois = new ObjectInputStream(socket.getInputStream());
             //convert ObjectInputStream object to String
             String message = (String) ois.readObject();
+            
+            
             System.out.println("Message Received: " + message);
             //create ObjectOutputStream object
             ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
@@ -46,5 +48,8 @@ public class SocketServerExample {
         System.out.println("Shutting down Socket server!!");
         //close the ServerSocket object
         server.close();
+        
+        
+        
     }
 }
