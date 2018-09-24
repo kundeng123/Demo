@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.Socket;
 
@@ -17,12 +18,18 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+* The Printer program implements a Text printer 
+* for portfolio info.
+*
+* @author  Kun Deng 
+*/
 public class Printer {
-	private static final Logger logger = LoggerFactory.getLogger(Printer.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(Printer.class);
 	private static int port = 9876;
 
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws IOException, ConnectException {
 
 		InetAddress host = InetAddress.getLocalHost();
 		Socket socket = null;
@@ -32,6 +39,8 @@ public class Printer {
 
 		
 		socket = new Socket(host, port);
+		
+		
 		DataInputStream din = new DataInputStream(socket.getInputStream());
 		DataOutputStream dout = new DataOutputStream(socket.getOutputStream());
 		
@@ -41,7 +50,7 @@ public class Printer {
 		
 		try {
 			str2 = din.readUTF();
-			logger.info("current price...{}",  Arrays.asList(str2.split(",")));
+			LOGGER.info("current price...{}",  Arrays.asList(str2.split(",")));
 
 			generateReport(Arrays.asList(str2.split(",")), writer);
 			
@@ -59,18 +68,24 @@ public class Printer {
 		writer.close();
 	}
 	
+	/**
+	 * generate a text file and format content
+	 *
+	 * @param  currentData
+	 * @param  writer
+	 */
 	private static void generateReport(List<String> currentData, FileWriter writer) throws IOException {
 	    SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");  
 	    Date date = new Date();  
 	    writer.write("Date: " + formatter.format(date) + "\n");
 	    writer.write("*****************************\n");
-	    writer.write("Current NAV: " + currentData.get(currentData.size()-1) + "\n");
+	    writer.write("Current NAV: " + currentData.get(currentData.size()-1).replace("]", "") + "\n");
 	    writer.write("*****************************\n");
 	    writer.write("Detail:\n");
 	    writer.write("----------------------------------\n");
 	    writer.write(String.format("|%-10s\t|%-20s|\r\n", "Security", "Current Value ($)"));
 	    writer.write("----------------------------------\n");
-	    writer.write(String.format("|%-10s\t|%-20s|\r\n", "STOCKA", currentData.get(0).trim()));
+	    writer.write(String.format("|%-10s\t|%-20s|\r\n", "STOCKA", currentData.get(0).replace("[", "").trim()));
 	    writer.write("----------------------------------\n");
 	    writer.write(String.format("|%-10s\t|%-20s|\r\n", "CALLA", currentData.get(1).trim()));
 	    writer.write("----------------------------------\n");
@@ -83,7 +98,7 @@ public class Printer {
 	    writer.write(String.format("|%-10s\t|%-20s|\r\n", "PUTB", currentData.get(5).trim()));
 	    writer.write("----------------------------------\n");
 	    writer.flush();
-//	    writer.
+
 	}
 
 }

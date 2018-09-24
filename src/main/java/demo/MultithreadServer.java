@@ -30,15 +30,12 @@ public class MultithreadServer implements Runnable {
 			dout = new DataOutputStream(s.getOutputStream());
 			String str = "";
 
-//			double[] currentData = { StockSimulator.stockPriceA, StockSimulator.optionPricesA[0], StockSimulator.optionPricesA[1], 
-//					StockSimulator.stockPriceB, StockSimulator.optionPricesB[0],StockSimulator.optionPricesB[1] };
 			double[] currentData = new double[7];
 			double[] temp = new double[7];
 			str = din.readUTF();
-			LOGGER.info(str);
 			if (str.equalsIgnoreCase("printer")) {
-//				str = din.readUTF();
-				LOGGER.info("client says: " + str);
+
+
 				currentData[0] = StockSimulator.stockPriceA * StockSimulator.stockAShare;
 
 				currentData[1] = StockSimulator.optionPricesA[0] * StockSimulator.callA;
@@ -57,14 +54,14 @@ public class MultithreadServer implements Runnable {
 
 			} else if (str.equalsIgnoreCase("subscriber")) {
 				while (System.currentTimeMillis() < end) {
+					
 					try {
-						Thread.sleep(500);
+						Thread.sleep(200);
 					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						LOGGER.error(e.getMessage(),e);
 					}
-//					str = din.readUTF();
-					LOGGER.info("client says: " + str);
+
+//					LOGGER.info("client says: " + str);
 
 					currentData[0] = StockSimulator.stockPriceA * StockSimulator.stockAShare;
 
@@ -79,10 +76,8 @@ public class MultithreadServer implements Runnable {
 					currentData[5] = StockSimulator.optionPricesB[1] * StockSimulator.putB;
 
 					currentData[6] = StockSimulator.getNav( Arrays.copyOfRange(currentData,0,5));
-					LOGGER.info("Current data {}", currentData);
-//					LOGGER.info("TEMP {}", temp);
 
-//					LOGGER.info("true or false {}", currentData == temp);
+					
 
 					if (currentData != temp) {
 						dout.writeUTF(Arrays.toString(currentData));
@@ -111,8 +106,7 @@ public class MultithreadServer implements Runnable {
 			din.close();
 			dout.close();
 		} catch (IOException e) {
-			// report exception somewhere.
-			e.printStackTrace();
+			LOGGER.error(e.getMessage(),e);
 		}
 	}
 }

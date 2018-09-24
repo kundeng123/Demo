@@ -1,25 +1,17 @@
 package demo;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InterruptedIOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
+
 import java.net.ServerSocket;
-import java.net.Socket;
+
 import java.net.SocketTimeoutException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.Random;
@@ -33,9 +25,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.h2.tools.Server;
-import java.util.stream.*;
 
-
+/**
+* The StockSimulator program implements an simulator 
+* for stocks, publish relevant info to client and update
+* H2 database during run time.
+*
+* @author  Kun Deng 
+*/
 public class StockSimulator {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(StockSimulator.class);
@@ -69,19 +66,36 @@ public class StockSimulator {
 	// Database credentials
 	static final String USER = "sa";
 	static final String PASS = "";
+	
+	//Timeout of process
+	static long duration = 60 * 1000; // 60 sec * 1000 ms/sec;
 
-	// Constructor
-	public StockSimulator(int stockID, double initialPrice) {
-
-	}
-
-	private double updateStockPrice(double s, double deltaT, double mu, double std) {
+	List<String> temp = new ArrayList<String>();
+	/**
+	 * Returns a updated stock price
+	 *
+	 * @param  s
+	 * @param  deltaT
+	 * @param  mu
+	 * @param  std 
+	 * @return the updated stock price s
+	 */
+	protected double updateStockPrice(double s, double deltaT, double mu, double std) {
 		Random random = new Random();
 		return Math.max(0.000001,
 				s + s * (mu * (deltaT / 7257600.00) + std * random.nextGaussian() * Math.sqrt(deltaT / 7257600.00)));
 	}
 
-	private double[] updateOptionPriceStock(double s, double k, int maturity, double std) {
+	/**
+	 * Returns a updated option value
+	 *
+	 * @param  s
+	 * @param  k
+	 * @param  maturity
+	 * @param  std 
+	 * @return the updated option value
+	 */
+	protected double[] updateOptionPriceStock(double s, double k, int maturity, double std) {
 		double d1 = (Math.log(s / k) + (RISK_FREE_RATE + std * std / 2) * maturity) / (std * Math.sqrt(maturity));
 		double d2 = d1 - std * Math.sqrt(maturity);
 		NormalDistribution normal = new NormalDistribution();
@@ -93,13 +107,25 @@ public class StockSimulator {
 						- s * normal.cumulativeProbability(-d1) };
 	}
 
-	public static double getNav(double[] info) {
+	/**
+	 * Returns a NAV value 
+	 *
+	 * @param  info Current stock and option values
+	 * @return NAV value
+	 */
+	protected static double getNav(double[] info) {
 		double sum = 0.0;
 		for (double val : info) {
 			sum += val;
 		}
 		return sum;
 	}
+
+	/**
+	 * Load properties 
+	 *
+	 * @param  prop 
+	 */
 	public static void loadProperties(Properties prop) {
 		if (prop.getProperty("stock.a.share").length() == 0)
 			stockAShare = 0;
@@ -132,14 +158,14 @@ public class StockSimulator {
 	public static void main(String[] args) {
 		LOGGER.info("Starting stock simulator................");
 
-		StockSimulator simulator = new StockSimulator(123, 100);
+		StockSimulator simulator = new StockSimulator();
 		Random random = new Random();
 
 		Connection conn = null;
 		Statement stmt = null;
 
 		long start = System.currentTimeMillis();
-		long end = start + 30 * 1000; // 60 sec * 1000 ms/sec
+		long end = start + duration; 
 
 		Properties prop = new Properties();
 		InputStream input = null;
@@ -158,8 +184,8 @@ public class StockSimulator {
 
 			// Setting up database tables
 			String sql = "CREATE TABLE if not exists  PROFILE " + "(id varchar(20) not NULL, "
-					+ " expected_return VARCHAR(255), " + " volatility VARCHAR(255), "
-					+ " Strike varchar2(20) ," +" Maturity varchar2(10), " + " PRIMARY KEY ( id ))";
+					+ " expected_return VARCHAR(255), " + " volatility VARCHAR(255), " + " Strike varchar2(20) ,"
+					+ " Maturity varchar2(10), " + " PRIMARY KEY ( id ))";
 			stmt.executeUpdate(sql);
 			LOGGER.info("Created PROFILE table in given database...");
 
@@ -169,21 +195,20 @@ public class StockSimulator {
 			sql = "insert into PROFILE values('STOCKA', '" + STOCK_A_MU + "','" + STOCK_A_STD + "','','')";
 			stmt.executeUpdate(sql);
 
-			sql = "insert into PROFILE values('STOCKB', '" + STOCK_B_MU + "','" + STOCK_B_STD +"','','')";
+			sql = "insert into PROFILE values('STOCKB', '" + STOCK_B_MU + "','" + STOCK_B_STD + "','','')";
 			stmt.executeUpdate(sql);
 
-			sql = "insert into PROFILE values('CALLA', '','','"+ optionStrikeA +"','1')";
+			sql = "insert into PROFILE values('CALLA', '','','" + optionStrikeA + "','1')";
 			stmt.executeUpdate(sql);
-			
-			sql = "insert into PROFILE values('PUTA', '','','"+ optionStrikeA +"','1')";
+
+			sql = "insert into PROFILE values('PUTA', '','','" + optionStrikeA + "','1')";
 			stmt.executeUpdate(sql);
-			
-			sql = "insert into PROFILE values('CALLB', '','','"+ optionStrikeB +"','1')";
+
+			sql = "insert into PROFILE values('CALLB', '','','" + optionStrikeB + "','1')";
 			stmt.executeUpdate(sql);
-			sql = "insert into PROFILE values('PUTB', '','','"+ optionStrikeB +"','1')";
+			sql = "insert into PROFILE values('PUTB', '','','" + optionStrikeB + "','1')";
 			stmt.executeUpdate(sql);
-			
-			
+
 			sql = "CREATE TABLE if not exists  STCK_A_VAL " + "(PRICE varchar(255) not NULL, "
 					+ " CALL_VAL VARCHAR(255), " + " PUT_VAL VARCHAR(255))";
 			stmt.executeUpdate(sql);
@@ -206,22 +231,14 @@ public class StockSimulator {
 
 					// run
 					long deltaT = random.nextInt(1501) + 500;
-					LOGGER.debug("deltaT {}", deltaT);
+//					LOGGER.debug("deltaT {}", deltaT);
 					try {
 						Thread.sleep(deltaT);
 						stockPriceA = simulator.updateStockPrice(stockPriceA, deltaT, STOCK_A_MU, STOCK_A_STD);
 						stockPriceB = simulator.updateStockPrice(stockPriceB, deltaT, STOCK_B_MU, STOCK_B_STD);
 
-//						LOGGER.debug("random millisecond {}", deltaT);
-//						LOGGER.debug("updatied prcie {}", stockPriceA);
-
 						optionPricesA = simulator.updateOptionPriceStock(stockPriceA, optionStrikeA, 1, STOCK_A_STD);
-//						LOGGER.debug("updatied option prices {}", optionPricesA);
 						optionPricesB = simulator.updateOptionPriceStock(stockPriceB, optionStrikeB, 1, STOCK_B_STD);
-//					LOGGER.debug("updatied option prices {}", optionPricesA);
-
-//						LOGGER.debug("updatied prcie {}", stockPriceB);
-//						LOGGER.debug("updatied option prices {}", optionPricesB);
 
 						String insertSql = "insert into STCK_A_VAL values('" + stockPriceA + "', '" + optionPricesA[0]
 								+ "','" + optionPricesA[1] + "')";
@@ -241,109 +258,23 @@ public class StockSimulator {
 				return "STOP";
 			};
 
-			Callable<String> startServer = () -> {
-				socketServer = new ServerSocket(port);
-				socketServer.setSoTimeout(30 * 1000); // 500 milliseconds
-				LOGGER.info("Starting server....");
-
-				Socket s = null;
-				DataInputStream din = null;
-				DataOutputStream dout = null;
-				try {
-					s = socketServer.accept();
-
-					din = new DataInputStream(s.getInputStream());
-					dout = new DataOutputStream(s.getOutputStream());
-
-					String str = "";
-
-					double[] currentData = { stockPriceA, optionPricesA[0], optionPricesA[1], stockPriceB,
-							optionPricesB[0],
-
-							optionPricesB[1] };
-
-					double[] temp = new double[6];
-					while (System.currentTimeMillis() < end) {
-
-						str = din.readUTF();
-						LOGGER.info("client says: " + str);
-
-						currentData[0] = stockPriceA * stockAShare;
-
-						currentData[1] = optionPricesA[0] * callA;
-
-						currentData[2] = optionPricesA[1] * putA;
-
-						currentData[3] = stockPriceB * stockBShare;
-
-						currentData[4] = optionPricesB[0] * callB;
-
-						currentData[5] = optionPricesB[1] * putB;
-
-//						LOGGER.info(Arrays.toString(currentData)+","+getNav(currentData));
-//						LOGGER.info("Current nav {}", getNav(currentData));
-//						LOGGER.info("TEMP {}", temp);
-
-//						LOGGER.info("true or false {}", currentData == temp);
-
-						if (currentData != temp) {
-							dout.writeUTF(Arrays.toString(currentData)+","+getNav(currentData));
-							dout.flush();
-						}
-						for (int i = 0; i < currentData.length; i++) {
-
-							temp[i] = currentData[i];
-
-						}
-
-					}
-					dout.writeUTF("STOP");
-					dout.flush();
-
-					LOGGER.info("Closing sockets.....");
-					if (s != null) {
-//					 ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
-//			         oos.writeObject("STOP");
-						s.close();
-					}
-					din.close();
-					dout.close();
-					socketServer.close();
-				} catch (Exception e) {
-					LOGGER.error(e.getMessage(), e);
-					if (s != null) {
-
-						s.close();
-					}
-					if (din != null)
-						din.close();
-					if (dout != null)
-						dout.close();
-					socketServer.close();
-				}
-				return "STOP";
-			};
 			Future<String> future = executorService.submit(callable);
-			Thread.sleep(5 * 1000);
+			Thread.sleep(2 * 1000);
 			socketServer = new ServerSocket(port);
-			socketServer.setSoTimeout(30 * 1000); // 500 milliseconds
+			socketServer.setSoTimeout((int) (end - System.currentTimeMillis())); 
 			LOGGER.info("Starting server....");
 			while (System.currentTimeMillis() < end) {
 				try {
-				MultithreadServer multithreadServer = new MultithreadServer(socketServer.accept(),"Server",end );
-				executorService.submit(multithreadServer);
-				}
-				catch (SocketTimeoutException e ) {
+					MultithreadServer multithreadServer = new MultithreadServer(socketServer.accept(), "Server", end);
+					executorService.submit(multithreadServer);
+				} catch (SocketTimeoutException e) {
 					LOGGER.warn(e.getMessage());
 					break;
 				}
-				
-			}
-			
-//			Future<String> futureServer = executorService.submit(startServer);
 
-			LOGGER.info(future.get());
-//			LOGGER.info(futureServer.get());
+			}
+			future.get();
+//			LOGGER.info(future.get());
 			socketServer.close();
 			executorService.shutdown();
 
@@ -365,19 +296,17 @@ public class StockSimulator {
 				if (stmt != null)
 					stmt.close();
 			} catch (SQLException se2) {
-			} // nothing we can do
+				LOGGER.error(se2.getMessage(), se2);
+			}
 			try {
 				if (conn != null)
 					conn.close();
 			} catch (SQLException se) {
-				se.printStackTrace();
-			} // end finally try
+				LOGGER.error(se.getMessage(), se);
+			}
 		}
 
 		System.exit(0);
 
-//		simulator.updateStockPrice(s, deltaT, STOCK_A_MU, STOCK_A_STD);
-
 	}
 }
-
